@@ -1,54 +1,79 @@
 #!/usr/bin/env python3
-import module
+import bricks as bricks
 import random
 
 title_line = "0 Name: Test\n"
 
 
-def readBox(line):
-  """ Takes a line from .ldr file and converts to object """
-  postIndex = line.index(" 0 0 0 1 0 0 0 1 p\\box.dat")
-  coord = line[4:postIndex+1].split(" ")
-  return module.box(int(coord[0]), int(coord[1]), int(coord[2]))
+class autobuilder(object):
 
-def getBlocks(file):
-  """ Takes a file and converts all the lines into
-      a list of objects """
-  boxes = []
-  for line in file.readlines():
-    if line.find(" p\\box.dat") > 0:
-      boxes.append(readBox(line))
-  return boxes
+  def __init__(self, fileName):
+    self.fileName = fileName
 
-def writePlane(file, cols, rows, height, offset_x, offset_y):
-  numblocks = cols * rows
-  colsCount = 0
-  for i in range (0, cols):
-    newBox = module.box(0+offset_x, 0, (i * 2)+offset_y)
-    newBox.writeToFile(file)
-    for j in range (0, rows):
-      rowBox = module.box(0+offset_x, j*2, i*2)
-      rowBox.writeToFile(file)
-      for z in range(0, height):
-        zBox = module.box((z * 2)+offset_x, j * 2, (i * 2)+offset_y)
-        zBox.writeToFile(file)
+  def readSimpleCube(self, line):
+    """ Takes a line from .ldr file and converts to object """
+    postIndex = line.index(" 0 0 0 1 0 0 0 1 p\\box.dat")
+    coord = line[4:postIndex+1].split(" ")
+    return bricks.SimpleCube(int(coord[0]), int(coord[1]), int(coord[2]))
+
+  # deprecated
+  # def getBlocks(file):
+  #   """ Takes a file and converts all the lines into
+  #       a list of objects """
+  #   boxes = []
+  #   for line in file.readlines():
+  #     if line.find(" p\\box.dat") > 0:
+  #       boxes.append(readBox(line))
+  #   return boxes
+
+  def writeRectangle(self, file, cols, rows, height, offset_x, offset_y):
+    for z in range (0, height):
+      for x in range (0, rows):
+        for y in range(0, cols):
+          # coordinates are a little weird on ldcad (x, z, y)... z being height
+          myCube = bricks.SimpleCube((x * 2)+offset_x, (z*2), (y * 2)+offset_y)
+          myCube.writeToFile(file)
+
+  def writePyramid(self, file, width, height, offset_x, offset_y):
+    for z in range (0, height):
+      for x in range (0, width - z*2):
+        for y in range(0, width - z*2):
+          # coordinates are a little weird on ldcad (x, z, y)... z being height
+          myCube = bricks.SimpleCube((x * 2)+offset_x+z*2, (z*2), (y * 2)+offset_y+z*2)
+          myCube.writeToFile(file)
+
+  def writeSphere(self, file, radius, offset_x, offset_y):
+    for z in range (0, radius):
+      for x in range (0, (radius-4) - z*2):
+        for y in range(0, (radius-4) - z*2):
+          # coordinates are a little weird on ldcad (x, z, y)... z being height
+          upside = bricks.SimpleCube((x * 2)+offset_x+z*2, (z*2), (y * 2)+offset_y+z*2)
+          upside.writeToFile(file)
+    for z in range (1, radius):
+      for x in range (0, (radius-4) - z*2):
+        for y in range(0, (radius-4) - z*2):
+          # coordinates are a little weird on ldcad (x, z, y)... z being height
+          downside = bricks.SimpleCube((x * 2)+offset_x+z*2, -(z*2), (y * 2)+offset_y+z*2)
+          downside.writeToFile(file)
+
+  def run(self):
+      print(f"Opening {self.fileName} ...", end =" ")
+      with open(self.fileName, 'w') as f:
+        print("Success")
+        # Read the current file contents
+        # print("Fetching boxes from file contents...")
+        # boxes = getBlocks(f)
+        # for box in boxes:
+        #   print(box)
+        self.writeRectangle(f, 3, 3, 2, 0, 10)
+        self.writePyramid(f, 11, 6, 10, 0)
+        self.writeSphere(f, 10, 25, 25)
+        f.close
+      print("File closed. Exiting...")
 
 def main():
-    """ Main entry point of the app """
-    myBox = module.box(1, 2, 3)
-    print("Opening ldraw/testStruct.ldr ...", end =" ")
-    with open('../ldraw/testStruct.ldr', 'w') as f:
-      print("Success")
-      # Read the current file contents
-      # print("Fetching boxes from file contents...")
-      # boxes = getBlocks(f)
-      # for box in boxes:
-      #   print(box)
-      writePlane(f, 3, 20, 3, 0, 0)
-      writePlane(f, 3, 20, 3, 10, 0)
-      f.close
-    print("File closed. Exiting...")
-
+  mySim = autobuilder('../ldraw/testStruct.ldr')
+  mySim.run()
 
 
 if __name__ == "__main__":
