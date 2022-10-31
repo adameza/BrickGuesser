@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bricks as bricks
+import seed as seed
 import random
 
 title_line = "0 Name: Test\n"
@@ -56,7 +57,7 @@ class autobuilder(object):
           downside = bricks.SimpleCube((x * 2)+offset_x+z*2, -(z*2), (y * 2)+offset_y+z*2)
           downside.writeToFile(file)
 
-  def run(self):
+  def run(self, seed):
       print(f"Opening {self.fileName} ...", end =" ")
       with open(self.fileName, 'w') as f:
         print("Success")
@@ -65,15 +66,26 @@ class autobuilder(object):
         # boxes = getBlocks(f)
         # for box in boxes:
         #   print(box)
-        self.writeRectangle(f, 3, 3, 2, 0, 10)
-        self.writePyramid(f, 11, 6, 10, 0)
-        self.writeSphere(f, 10, 25, 25)
+        # self.writeRectangle(f, 3, 3, 2, 0, 10)
+        # self.writePyramid(f, 8, 5, 18, 0)
+        # self.writePyramid(f, 8, 5, 0, 0)
+        # self.writePyramid(f, 8, 5, 9, 18)
+        # self.writeSphere(f, 9, 25, 25)
+        for index in range(0, seed.numShapes):
+          if seed.shape == "pyramid":
+            self.writePyramid(f, seed.width, seed.height, seed.xOffsets[index], seed.yOffsets[index])
+          if seed.shape == "sphere":
+            self.writeSphere(f, seed.width, seed.xOffsets[index], seed.yOffsets[index])
+          if seed.shape == "cube":
+            self.writeRectangle(f, seed.width, seed.length, seed.height, seed.xOffsets[index], seed.yOffsets[index])
         f.close
       print("File closed. Exiting...")
 
 def main():
   mySim = autobuilder('../ldraw/testStruct.ldr')
-  mySim.run()
+  mySeed = seed.Seed()
+  mySeed.generate()
+  mySim.run(mySeed)
 
 
 if __name__ == "__main__":
