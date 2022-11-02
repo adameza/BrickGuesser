@@ -27,6 +27,13 @@ class autobuilder(object):
   #       boxes.append(readBox(line))
   #   return boxes
 
+  def writeCeiling(self, file, offset_x, offset_y, offset_z):
+    print(f"args ({offset_x}, {offset_y}, {offset_z})\n")
+    for x in range(offset_x):
+      for y in range(offset_y):
+        myCube = bricks.SimpleCube((x * 2), offset_z-4, (y * 2))
+        myCube.writeToFile(file)
+
   def writeRectangle(self, file, cols, rows, height, offset_x, offset_y):
     for z in range (0, height):
       for x in range (0, rows):
@@ -78,6 +85,7 @@ class autobuilder(object):
             self.writeSphere(f, seed.width, seed.xOffsets[index], seed.yOffsets[index])
           if seed.shape == "cube":
             self.writeRectangle(f, seed.width, seed.length, seed.height, seed.xOffsets[index], seed.yOffsets[index])
+        # self.writeCeiling(f, seed.xOffsets[1], seed.yOffsets[2], seed.height)
         f.close
       print("File closed. Exiting...")
 

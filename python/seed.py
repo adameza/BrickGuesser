@@ -1,9 +1,22 @@
+""" 
+Random events that can give a unqie structure
+
+-Initial Shape (cube, sphere, pyramid)
+-Size of shapes
+-Number of shapes
+-Floor
+-Ceiling
+-Pillars
+  -height and width
+
+ """
+
 import random
 
 class Seed(object):
   
   def __init__(self):
-    self.shapesChoices = ["cube", "pyramid", "sphere"]
+    self.shapesChoices = ["pyramid", "sphere", "cube"]
     self.shape = "default"
     self.xOffsets = []
     self.yOffsets = []
@@ -26,6 +39,7 @@ class Seed(object):
       case "sphere":
         self.width = random.randrange(9, 50, 1)
         self.length = self.width
+        self.height = self.width
 
   def genOffsets(self):
     # spacing = random.randrange(0, 6, 2)
@@ -67,15 +81,17 @@ class Seed(object):
         self.xOffsets.append(-1*(2 * (self.length) + spacing))
         self.yOffsets.append(-1*((self.width) + spacing))
 
+
   def generate(self):
     # get a random shape
     self.shape = random.choice(self.shapesChoices)
     # generate a random size for that shape
     self.genSize()
     # generate a number of shapes
-    # self.numShapes = random.randrange(1, 5, 1)
-    self.numShapes = 4
+    self.numShapes = random.randrange(3, 5, 1)
     # generate offsets
     self.genOffsets()
-    #roof or ceiling for pyramid/sphere
+    #floor or ceiling for pyramid/sphere
+    # if self.shape is "pyramid" or self.shape is "sphere":
+    #   self.genFloorCeiling()
 
