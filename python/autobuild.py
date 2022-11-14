@@ -78,6 +78,7 @@ class autobuilder(object):
             self.writeSphere(f, seed.width, seed.xOffsets[index], seed.yOffsets[index])
           if seed.shape == "cube":
             self.writeRectangle(f, seed.width, seed.length, seed.height, seed.xOffsets[index], seed.yOffsets[index])
+        
         f.close
       print("File closed. Exiting...")
 
