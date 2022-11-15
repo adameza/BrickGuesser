@@ -18,7 +18,12 @@ class SimpleCube(object):
           return False
 
     def writeToFile(self, file):
-      # print(f"Writing simple cube with coordinates ({self.x},  {self.y},  {self.z})")
+      # check if brick already exists
+      for line in file:
+        if line == self.__makeString:
+          return
+
+      print(f"Writing simple cube with coordinates ({self.x},  {self.y},  {self.z})")
       file.write(self.__makeString())
 
     def __makeString(self):
