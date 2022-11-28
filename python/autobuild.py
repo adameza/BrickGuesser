@@ -57,6 +57,30 @@ class autobuilder(object):
           downside = bricks.SimpleCube((x * 2)+offset_x+z*2, -(z*2), (y * 2)+offset_y+z*2)
           downside.writeToFile(file)
 
+  def deleteRandomBricks(self):
+    percentages = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
+    percentage2Delete = random.choice(percentages)
+
+    with open(self.fileName) as file:
+      lines = file.readlines()
+      numOfBricks = len(lines)
+      num2Delete = numOfBricks * .01 * percentage2Delete
+
+      for i in range(num2Delete):
+        line2Delete = random.randrange(len(numOfBricks))
+        lines.pop(line2Delete)
+        numOfBricks -= 1
+
+      file.seek(0)
+      file.truncate(0)
+
+      for line in lines:
+        file.write(line)
+
+
+
+    
+
   def run(self, seed):
       print(f"Opening {self.fileName} ...", end =" ")
       with open(self.fileName, 'w') as f:
