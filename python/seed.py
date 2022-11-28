@@ -1,9 +1,22 @@
+""" 
+Random events that can give a unqie structure
+
+-Initial Shape (cube, sphere, pyramid)
+-Size of shapes
+-Number of shapes
+-Floor
+-Ceiling
+-Pillars
+  -height and width
+
+ """
+
 import random
 
 class Seed(object):
   
-  def __init__(self):
-    self.shapesChoices = ["cube", "pyramid", "sphere"]
+  def __init__(self, zOffset, maxWidth):
+    self.shapesChoices = ["sphere", "pyramid", "cube"]
     self.shape = "default"
     self.xOffsets = []
     self.yOffsets = []
@@ -12,6 +25,9 @@ class Seed(object):
     self.length = 0
     self.radius = 0
     self.numShapes = 0
+    self.zOffset = zOffset
+    self.ceiling = 0
+    self.maxWidth = maxWidth
 
   def genSize(self):
     match self.shape:
@@ -20,12 +36,13 @@ class Seed(object):
         self.length = random.randrange(10, 50, 1)
         self.height = random.randrange(10, 50, 1)
       case "pyramid":
-        self.width = random.randrange(7, 50, 1)
+        self.width = random.randrange(7, self.maxWidth, 1)
         self.length = self.width
         self.height = random.randrange(6, self.width, 1)
       case "sphere":
         self.width = random.randrange(9, 50, 1)
         self.length = self.width
+        self.height = self.width
 
   def genOffsets(self):
     # spacing = random.randrange(0, 6, 2)
@@ -67,15 +84,30 @@ class Seed(object):
         self.xOffsets.append(-1*(2 * (self.length) + spacing))
         self.yOffsets.append(-1*((self.width) + spacing))
 
+  def calc_ceiling(self):
+    if self.shape == 'pyramid':
+      realheight = (self.width // 2)
+      if (self.height > realheight):
+        self.ceiling = realheight
+      else:
+        self.ceiling = self.height
+      self.ceiling = ((self.ceiling-1)*2)+2 + self.zOffset
+    elif self.shape == "cube":
+      self.ceiling = (self.height*2) + self.zOffset
+    elif self.shape == "sphere":
+      self.ceiling = (self.width-4) + self.zOffset
+
   def generate(self):
     # get a random shape
     self.shape = random.choice(self.shapesChoices)
     # generate a random size for that shape
     self.genSize()
     # generate a number of shapes
-    # self.numShapes = random.randrange(1, 5, 1)
-    self.numShapes = 4
+    self.numShapes = random.randrange(3, 5, 1)
     # generate offsets
     self.genOffsets()
-    #roof or ceiling for pyramid/sphere
+    self.calc_ceiling()
+    #floor or ceiling for pyramid/sphere
+    # if self.shape is "pyramid" or self.shape is "sphere":
+    #   self.genFloorCeiling()
 
