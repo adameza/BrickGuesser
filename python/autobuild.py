@@ -54,6 +54,8 @@ class autobuilder(object):
         myCube.writeToFile(file)
 
   def writeRectangle(self, file, cols, rows, height, offset_x, offset_y, offset_z):
+    if random.randrange(0, 10) > 5:
+      cols = cols // 2
     for z in range (0, height):
       for x in range (0, rows):
         for y in range(0, cols):
@@ -62,6 +64,8 @@ class autobuilder(object):
           myCube.writeToFile(file)
 
   def writePyramid(self, file, width, height, offset_x, offset_y, offset_z):
+    if random.randrange(0, 10) > 5:
+      width = random.randrange(width, width*2)
     for z in range (0, height):
       for x in range (0, width - z*2):
         for y in range(0, width - z*2):
@@ -70,6 +74,8 @@ class autobuilder(object):
           myCube.writeToFile(file)
 
   def writeSphere(self, file, radius, offset_x, offset_y, offset_z):
+    if random.randrange(0, 10) > 5:
+      radius = random.randrange(radius, radius*2)
     for z in range (0, radius):
       for x in range (0, (radius-4) - z*2):
         for y in range(0, (radius-4) - z*2):
@@ -102,12 +108,14 @@ class autobuilder(object):
 def main():
   mySim = autobuilder('../ldraw/testStruct.ldr')
   # mySeed = seed.Seed(0)
+  with open(mySim.fileName, 'w') as f:
+    f.close()
 
   print(f"Opening {mySim.fileName} ...", end =" ")
-  with open(mySim.fileName, 'w') as f:
+  with open(mySim.fileName, 'r+') as f:
     print("Success")
 
-    numLevels = random.randrange(7, 9, 1)
+    numLevels = random.randrange(4, 12, 1)
     levels = [None] * numLevels
     maxWidth = 50
     for i in range(numLevels):
@@ -121,16 +129,16 @@ def main():
       levels[i].generate()
       mySim.run(f, levels[i])
 
-    # f.close
+    #remove duplicates in testStruct.ldr and write to output.ldr
+    seen = set()
+    print("Removing duplicates in output file")
+    with open('../ldraw/testStruct.ldr', 'r') as fin, open('../ldraw/output.ldr', 'w') as fout:
+        for line in fin:
+            h = hash(line)
+            if h not in seen:
+                fout.write(line)
+                seen.add(h)
 
-    # with open(mySim.fileName, 'r+') as f:
-
-    #   allCubes = mySim.getBlocks(f)
-    #   while(mySim.verifyFile(f, allCubes) is False):
-    #     print("duplicate removed")
-
-
-    f.close
     print("File closed. Exiting...")
 
   # print(f"w {mySeed.width}, h {mySeed.height}\n")
