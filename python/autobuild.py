@@ -54,8 +54,12 @@ class autobuilder(object):
         myCube.writeToFile(file)
 
   def writeRectangle(self, file, cols, rows, height, offset_x, offset_y, offset_z):
-    if random.randrange(0, 10) > 5:
-      cols = cols // 2
+    randomDel = random.randrange(0, 15)
+    if randomDel < 5:
+      rows = rows // 2
+    elif randomDel < 10:
+      height = height + height // 4
+
     for z in range (0, height):
       for x in range (0, rows):
         for y in range(0, cols):
@@ -72,6 +76,14 @@ class autobuilder(object):
           # coordinates are a little weird on ldcad (x, z, y)... z being height
           myCube = bricks.SimpleCube((x * 2)+offset_x+z*2, (z*2) + offset_z, (y * 2)+offset_y+z*2)
           myCube.writeToFile(file)
+
+  # def writeStair(self, file, width, length, height, offset_x, offset_y, offset_z):
+  #   for z in range (0, height):
+  #     for x in range (0, width - z*2):
+  #       for y in range(0, width - z*2):
+  #         # coordinates are a little weird on ldcad (x, z, y)... z being height
+  #         myCube = bricks.SimpleCube((x * 2)+offset_x+z*2, (z*2) + offset_z, (y * 2)+offset_y+z*2)
+  #         myCube.writeToFile(file)
 
   def writeSphere(self, file, radius, offset_x, offset_y, offset_z):
     if random.randrange(0, 10) > 5:
@@ -90,16 +102,15 @@ class autobuilder(object):
           downside.writeToFile(file)
 
   def deleteRandomBricks(self):
-    percentages = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
-    percentage2Delete = random.choice(percentages)
+    percentage2Delete = random.randrange(0, 30)
 
-    with open(self.fileName) as file:
+    with open(self.fileName, 'r+') as file:
       lines = file.readlines()
       numOfBricks = len(lines)
-      num2Delete = numOfBricks * .01 * percentage2Delete
+      num2Delete = int(numOfBricks * .01 * percentage2Delete)
 
       for i in range(num2Delete):
-        line2Delete = random.randrange(len(numOfBricks))
+        line2Delete = random.randrange(numOfBricks)
         lines.pop(line2Delete)
         numOfBricks -= 1
 
@@ -128,7 +139,7 @@ class autobuilder(object):
 
 def main():
   mySim = autobuilder('../ldraw/testStruct.ldr')
-  # mySeed = seed.Seed(0)
+  # clear whatever is currently in the file
   with open(mySim.fileName, 'w') as f:
     f.close()
 
@@ -141,7 +152,7 @@ def main():
     maxWidth = 50
     for i in range(numLevels):
       if i == 0:
-        levels[i] = seed.Seed(0, 50)
+        levels[i] = seed.Seed(0, 10)
         levels[i].generate()
         maxWidth = levels[i].width
 
@@ -149,7 +160,7 @@ def main():
         levels[i] = seed.Seed(levels[i-1].ceiling + 2, maxWidth)
       levels[i].generate()
       mySim.run(f, levels[i])
-
+    mySim.deleteRandomBricks()
     #remove duplicates in testStruct.ldr and write to output.ldr
     seen = set()
     print("Removing duplicates in output file")

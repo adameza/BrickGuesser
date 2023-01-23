@@ -32,15 +32,15 @@ class Seed(object):
   def genSize(self):
     match self.shape:
       case "cube":
-        self.width = random.randrange(10, 50, 1)
-        self.length = random.randrange(10, 50, 1)
-        self.height = random.randrange(10, 50, 1)
+        self.width = random.randrange(2, 15, 1)
+        self.length = random.randrange(1, 15, 1)
+        self.height = random.randrange(1, 15, 1)
       case "pyramid":
-        self.width = random.randrange(7, self.maxWidth, 1)
+        self.width = random.randrange(1, 15, 1)
         self.length = self.width
-        self.height = random.randrange(6, self.width, 1)
+        self.height = random.randrange(0, self.width, 1)
       case "sphere":
-        self.width = random.randrange(9, 50, 1)
+        self.width = random.randrange(2, 15, 1)
         self.length = self.width
         self.height = self.width
 
