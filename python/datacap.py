@@ -2,6 +2,7 @@ import pyautogui
 import time
 from autobuild import *
 from seed import *
+import os
 # print(pyautogui.size())
 
 # scripts button (294, 51)
@@ -30,7 +31,8 @@ from seed import *
 # pyautogui.displayMousePosition()
 
 # "ok" for in between builds (757,723)
-totalBuilds = 5
+totalBuilds = 100
+pics_per_build = 3
 
 def main():
   for build_num in range(totalBuilds):
@@ -72,47 +74,74 @@ def main():
 
       print("File closed. Exiting...")
       
-    # render time
-    time.sleep(1)
       
-    #first make sure on correct workspace
-    pyautogui.hotkey("win", "4")
-    time.sleep(0.1)
-    
-    # pass thourhg file change prompt
-    pyautogui.click(757, 723)
-    time.sleep(0.1)
-    
-    # click file botton
-    pyautogui.click(28, 52)
-    time.sleep(0.1)
-    
-    # click export button
-    pyautogui.click(73, 413)
-    time.sleep(0.1)
-    
-    # click opengl
-    pyautogui.click(155,186)
-    time.sleep(0.1)
-    
-    # click path input box and clear contents
-    pyautogui.click(990,663)
-    pyautogui.hotkey("ctrl", "a")
-    pyautogui.hotkey("backspace")
-    time.sleep(0.1)
-    
-    # type path
-    name = "build_" + str(build_num) + ".png"
-    pyautogui.typewrite("/home/adam/Poly/SeniorProject/generated_data/" + name)
-    time.sleep(0.1)
-    
-    # final export button
-    pyautogui.click(680,705)
-    time.sleep(0.5)
-    
-    # click ok button
-    pyautogui.click(1141,652)
-    time.sleep(0.1)
+    for pic_num in range(pics_per_build):
+        
+        
+      # render time
+      time.sleep(1)
+        
+      #first make sure on correct workspace
+      pyautogui.hotkey("win", "4")
+      time.sleep(0.1)
+      
+      # pass thourhg file change prompt
+      pyautogui.click(757, 723)
+      time.sleep(0.1)
+      
+      if pic_num == 0:
+        folder = "build_" + str(build_num)
+        path = "/home/adam/Poly/SeniorProject/generated_data/" + folder
+        os.mkdir(path)
+        
+        #refresh screen
+        # click file botton
+        pyautogui.moveTo(28, 52)
+        pyautogui.click(28, 52)
+        time.sleep(0.1)
+        
+        pyautogui.moveTo(59, 189)
+        pyautogui.click(59, 189)
+        time.sleep(0.1)
+      
+      #rotate object
+      pyautogui.moveTo(365, 1066)
+      x_change = 365 + random.randrange(5, 150)
+      y_change = 1066 + random.randrange(-150, -5)
+      pyautogui.dragTo(x_change, y_change, button='left', duration=0.5)
+      time.sleep(0.1)
+      
+      # click file botton
+      pyautogui.moveTo(28, 52)
+      pyautogui.click(28, 52)
+      time.sleep(0.1)
+      
+      # click export button
+      pyautogui.click(73, 413)
+      time.sleep(0.1)
+      
+      # click opengl
+      pyautogui.click(155,186)
+      time.sleep(0.1)
+      
+      # click path input box and clear contents
+      pyautogui.click(990,663)
+      pyautogui.hotkey("ctrl", "a")
+      pyautogui.hotkey("backspace")
+      time.sleep(0.1)
+      
+      # type path
+      name = "/build_" + str(build_num) + "_pic" + str(pic_num) + "_" + str(lineCount) + ".png"
+      pyautogui.typewrite(path + name)
+      time.sleep(0.1)
+      
+      # final export button
+      pyautogui.click(680,705)
+      time.sleep(0.5)
+      
+      # click ok button
+      pyautogui.click(1141,652)
+      time.sleep(0.1)
   
 if __name__ == "__main__":
     """ This is executed when run from the command line """
