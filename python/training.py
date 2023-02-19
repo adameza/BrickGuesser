@@ -16,7 +16,7 @@ print("Torchvision Version: ",torchvision.__version__)
 
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
-data_dir = "./data/hymenoptera_data"
+data_dir = "../generated_data"
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
 model_name = "mobilenet"
@@ -28,7 +28,7 @@ num_classes = 1
 batch_size = 8
 
 # Number of epochs to train for
-num_epochs = 15
+num_epochs = 30
 
 # Flag for feature extracting. When False, we finetune the whole model,
 #   when True we only update the reshaped layer params
@@ -59,6 +59,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
+                print(labels)
                 # inputs = inputs.to(device)
                 # labels = labels.to(device)
 
@@ -79,8 +80,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         loss2 = criterion(aux_outputs, labels)
                         loss = loss1 + 0.4*loss2
                     else:
-                        outputs = model(inputs)
-                        loss = criterion(outputs, labels)
+                        outputs = model(inputs).float()
+                        print(outputs)
+                        loss = criterion(outputs, labels.float())
 
                     _, preds = torch.max(outputs, 1)
 
@@ -186,9 +188,9 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
         input_size = 299
         
     elif model_name == "mobilenet":
-        model_ft = models.mobilenet_v3_large(pretrained=use_pretrained)
+        model_ft = models.mobilenet_v2(pretrained=use_pretrained)
         set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft.classifier.in_features
+        num_ftrs = 1280
         model_ft.classifier = nn.Linear(num_ftrs, num_classes)
         input_size = 224
 
@@ -202,8 +204,14 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
 def main():
     
-    # Data augmentation and normalization for training
-    # Just normalization for validation
+    # # Initialize the model for this run
+    model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=True)
+
+    # # Print the model we just instantiated
+    print(model_ft)
+    
+    # # Data augmentation and normalization for training
+    # # Just normalization for validation
     data_transforms = {
         'train': transforms.Compose([
             transforms.RandomResizedCrop(input_size),
@@ -217,12 +225,14 @@ def main():
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
-    }
+    }   
 
     print("Initializing Datasets and Dataloaders...")
 
     # Create training and validation datasets
     image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+    for key in image_datasets:
+        print(image_datasets[key].classes)
     # Create training and validation dataloaders
     dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
 
@@ -250,21 +260,17 @@ def main():
         for name,param in model_ft.named_parameters():
             if param.requires_grad == True:
                 print("\t",name)
-
+                
     # Observe that all parameters are being optimized
     optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
     
-    # Initialize the model for this run
-    model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=True)
-
-    # Print the model we just instantiated
-    print(model_ft)
-    
     # Setup the loss fxn
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
 
     # Train and evaluate
-    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+    # model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+    # model_ft = models.mobilenet_v2(pretrained=True)
+    # print(model_ft)
     
 if __name__ == "__main__":
     main()
