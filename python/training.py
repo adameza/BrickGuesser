@@ -18,27 +18,28 @@ print("Torchvision Version: ",torchvision.__version__)
 #   to the ImageFolder structure
 data_dir = "../generated_data"
 
-# Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "mobilenet"
-
 # Number of classes in the dataset
-num_classes = 1
+num_outputs = 1
 
 # Batch size for training (change depending on how much memory you have)
-batch_size = 8
+batch_size = 3
 
 # Number of epochs to train for
-num_epochs = 30
+num_epochs = 15
+
+Learning_Rate=1e-5
+
 
 # Flag for feature extracting. When False, we finetune the whole model,
 #   when True we only update the reshaped layer params
 feature_extract = True
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, labels_list=None):
     since = time.time()
 
     val_acc_history = []
+    running_corrects = 0
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -58,8 +59,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             running_corrects = 0
 
             # Iterate over data.
+            labels_list_index = 0
             for inputs, labels in dataloaders[phase]:
-                print(labels)
+                # print(labels)
                 # inputs = inputs.to(device)
                 # labels = labels.to(device)
 
@@ -71,7 +73,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                 with torch.set_grad_enabled(phase == 'train'):
                     # Get model outputs and calculate loss
                     # Special case for inception because in training it has an auxiliary output. In train
-                    #   mode we calculate the loss by summing the final output and the auxiliary output
+                    #   mode we calculate the loss by summi1.000000ng the final output and the auxiliary output
                     #   but in testing we only consider the final output.
                     if is_inception and phase == 'train':
                         # From https://discuss.pytorch.org/t/how-to-optimize-inception-model-with-auxiliary-classifiers/7958
@@ -80,9 +82,12 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         loss2 = criterion(aux_outputs, labels)
                         loss = loss1 + 0.4*loss2
                     else:
-                        outputs = model(inputs).float()
+                        outputs = model(inputs)
+                        expected = labels_list[labels_list_index]
+                        loss = criterion(outputs, torch.Tensor([[expected], [expected], [expected]]))
                         print(outputs)
-                        loss = criterion(outputs, labels.float())
+                        print(expected)
+                        labels_list_index+=1
 
                     _, preds = torch.max(outputs, 1)
 
@@ -92,11 +97,14 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         optimizer.step()
 
                 # statistics
+                print(f"my loss = {loss.item()}")
                 running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                for output in torch.le(torch.abs(torch.sub(outputs, expected)), 0.01):
+                    if output == True:
+                        running_corrects+=1
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
-            epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
+            epoch_acc = float(running_corrects) / len(dataloaders[phase].dataset)
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
@@ -122,81 +130,15 @@ def set_parameter_requires_grad(model, feature_extracting):
         for param in model.parameters():
             param.requires_grad = False
             
-def initialize_model(model_name, num_classes, feature_extract, use_pretrained=True):
+def initialize_model(num_outputs, feature_extract, use_pretrained=True):
     # Initialize these variables which will be set in this if statement. Each of these
     #   variables is model specific.
-    model_ft = None
-    input_size = 0
 
-    if model_name == "resnet":
-        """ Resnet18
-        """
-        model_ft = models.resnet18(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-    elif model_name == "alexnet":
-        """ Alexnet
-        """
-        model_ft = models.alexnet(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft.classifier[6].in_features
-        model_ft.classifier[6] = nn.Linear(num_ftrs,num_classes)
-        input_size = 224
-
-    elif model_name == "vgg":
-        """ VGG11_bn
-        """
-        model_ft = models.vgg11_bn(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft.classifier[6].in_features
-        model_ft.classifier[6] = nn.Linear(num_ftrs,num_classes)
-        input_size = 224
-
-    elif model_name == "squeezenet":
-        """ Squeezenet
-        """
-        model_ft = models.squeezenet1_0(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        model_ft.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1,1), stride=(1,1))
-        model_ft.num_classes = num_classes
-        input_size = 224
-
-    elif model_name == "densenet":
-        """ Densenet
-        """
-        model_ft = models.densenet121(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft.classifier.in_features
-        model_ft.classifier = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-    elif model_name == "inception":
-        """ Inception v3
-        Be careful, expects (299,299) sized images and has auxiliary output
-        """
-        model_ft = models.inception_v3(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        # Handle the auxilary net
-        num_ftrs = model_ft.AuxLogits.fc.in_features
-        model_ft.AuxLogits.fc = nn.Linear(num_ftrs, num_classes)
-        # Handle the primary net
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs,num_classes)
-        input_size = 299
-        
-    elif model_name == "mobilenet":
-        model_ft = models.mobilenet_v2(pretrained=use_pretrained)
-        set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = 1280
-        model_ft.classifier = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-    else:
-        print("Invalid model name, exiting...")
-        exit()
+    model_ft = models.mobilenet_v2(pretrained=use_pretrained)
+    set_parameter_requires_grad(model_ft, feature_extract)
+    num_ftrs = 1280
+    model_ft.classifier = nn.Linear(num_ftrs, num_outputs)
+    input_size = 224
 
     return model_ft, input_size
 
@@ -205,10 +147,10 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 def main():
     
     # # Initialize the model for this run
-    model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained=True)
+    model_ft, input_size = initialize_model(num_outputs, feature_extract, use_pretrained=True)
 
     # # Print the model we just instantiated
-    print(model_ft)
+    # print(model_ft)
     
     # # Data augmentation and normalization for training
     # # Just normalization for validation
@@ -231,11 +173,18 @@ def main():
 
     # Create training and validation datasets
     image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+    labels_list = []
+    print(len(image_datasets['train']))
+    print(len(image_datasets['val']))
     for key in image_datasets:
-        print(image_datasets[key].classes)
+        for label_index in range(len(image_datasets[key].classes)):
+            labels_list.append(float(image_datasets[key].classes[label_index]) / 21000)
+    #     print(image_datasets[key].classes)
     # Create training and validation dataloaders
     dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
-
+    # for inputs, labels in dataloaders_dict['train']:
+        # print(labels)
+        # print(len(inputs))
     # # Detect if we have a GPU available
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -262,14 +211,17 @@ def main():
                 print("\t",name)
                 
     # Observe that all parameters are being optimized
-    optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+    optimizer_ft = torch.optim.Adam(params=model_ft.parameters(),lr=Learning_Rate) 
     
     # Setup the loss fxn
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
 
     # Train and evaluate
-    # model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
-    # model_ft = models.mobilenet_v2(pretrained=True)
+    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=False, labels_list=labels_list)
+    
+    # torch.save(model_ft.state_dict(), os.path)
+    
+    # print(model_ft(data_transforms['val'][0]) * 2100)
     # print(model_ft)
     
 if __name__ == "__main__":
