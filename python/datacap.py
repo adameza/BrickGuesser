@@ -31,8 +31,13 @@ import os
 # pyautogui.displayMousePosition()
 
 # "ok" for in between builds (757,723)
-totalBuilds = 100
-pics_per_build = 3
+
+# view button (156, 84)
+#   view - editing views (221, 232)
+#   fit view - (211, 211)
+
+totalBuilds = 1000
+pics_per_build = 5
 
 def main():
   for build_num in range(totalBuilds):
@@ -90,9 +95,10 @@ def main():
       time.sleep(0.1)
       
       if pic_num == 0:
-        folder = "build_" + str(build_num)
-        path = "/home/adam/Poly/SeniorProject/generated_data/" + folder
-        os.mkdir(path)
+        folder = str(lineCount)
+        path = "/home/adam/OneDrive/SeniorProjectData/generated_data/" + folder
+        if os.path.exists(path) == False:
+          os.mkdir(path)
         
         #refresh screen
         # click file botton
@@ -105,10 +111,22 @@ def main():
         time.sleep(0.1)
       
       #rotate object
-      pyautogui.moveTo(365, 1066)
+      pyautogui.moveTo(365, 1033)
       x_change = 365 + random.randrange(5, 150)
-      y_change = 1066 + random.randrange(-150, -5)
+      # y_change = 1066 + random.randrange(-150, -5)
+      y_change = 1033
       pyautogui.dragTo(x_change, y_change, button='left', duration=0.5)
+      time.sleep(0.1)
+      
+      #fit structure into view
+      pyautogui.moveTo(154, 65)
+      pyautogui.click(154, 65)
+      time.sleep(0.1)
+      pyautogui.moveTo(209, 212)
+      pyautogui.click(209, 212)
+      time.sleep(0.1)
+      pyautogui.moveTo(196, 193)
+      pyautogui.click(196, 193)
       time.sleep(0.1)
       
       # click file botton
