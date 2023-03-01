@@ -36,7 +36,7 @@ import os
 #   view - editing views (221, 232)
 #   fit view - (211, 211)
 
-totalBuilds = 1000
+totalBuilds = 2000
 pics_per_build = 5
 
 def main():
@@ -96,7 +96,8 @@ def main():
       
       if pic_num == 0:
         folder = str(lineCount)
-        path = "/home/adam/OneDrive/SeniorProjectData/generated_data/" + folder
+        path = "/home/adam/OneDrive/SeniorProjectData/normalized/val/" + folder
+        # path = "/home/adam/Poly/SeniorProject/generated_data/" + folder
         if os.path.exists(path) == False:
           os.mkdir(path)
         
@@ -111,10 +112,13 @@ def main():
         time.sleep(0.1)
       
       #rotate object
-      pyautogui.moveTo(365, 1033)
+      pyautogui.moveTo(391, 1059)
+      time.sleep(0.1)
+      
+      pyautogui.moveTo(375, 1001)
       x_change = 365 + random.randrange(5, 150)
       # y_change = 1066 + random.randrange(-150, -5)
-      y_change = 1033
+      y_change = 1001
       pyautogui.dragTo(x_change, y_change, button='left', duration=0.5)
       time.sleep(0.1)
       

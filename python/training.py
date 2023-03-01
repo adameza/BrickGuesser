@@ -9,6 +9,7 @@ from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
 import time
 import os
+from PIL import Image
 import copy
 
 print("PyTorch Version: ",torch.__version__)
@@ -16,7 +17,7 @@ print("Torchvision Version: ",torchvision.__version__)
 
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
-data_dir = "/home/adam/OneDrive/SeniorProjectData/generated_data"
+data_dir = "/home/adam/OneDrive/SeniorProjectData/normalized"
 
 # Number of classes in the dataset
 num_outputs = 1
@@ -25,9 +26,9 @@ num_outputs = 1
 batch_size = 5
 
 # Number of epochs to train for
-num_epochs = 15
+num_epochs = 30
 
-Learning_Rate=1e-5
+Learning_Rate=1e-3
 
 
 # Flag for feature extracting. When False, we finetune the whole model,
@@ -35,7 +36,7 @@ Learning_Rate=1e-5
 feature_extract = True
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, labels_list=None):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, train_labels_list=None, val_labels_list=None):
     since = time.time()
 
     val_acc_history = []
@@ -43,12 +44,13 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
-
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
 
         # Each epoch has a training and validation phase
+        train_index = 0
+        val_index = 0
         for phase in ['train', 'val']:
             if phase == 'train':
                 model.train()  # Set model to training mode
@@ -57,11 +59,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
             running_loss = 0.0
             running_corrects = 0
-
             # Iterate over data.
-            labels_list_index = 0
             for inputs, labels in dataloaders[phase]:
-                # print(labels)
                 # inputs = inputs.to(device)
                 # labels = labels.to(device)
 
@@ -83,11 +82,22 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         loss = loss1 + 0.4*loss2
                     else:
                         outputs = model(inputs)
-                        expected = labels_list[labels_list_index]
-                        loss = criterion(outputs, torch.Tensor([[expected], [expected], [expected], [expected], [expected]]))
+                        if phase == 'train':
+                            # print(labels[0].item())
+                            expected = torch.Tensor([[train_labels_list[labels[0].item()]],
+                                                    [train_labels_list[labels[1].item()]],
+                                                    [train_labels_list[labels[2].item()]],
+                                                    [train_labels_list[labels[3].item()]],
+                                                    [train_labels_list[labels[4].item()]]])
+                        else:
+                            expected = torch.Tensor([[train_labels_list[labels[0].item()]],
+                                                    [train_labels_list[labels[1].item()]],
+                                                    [train_labels_list[labels[2].item()]],
+                                                    [train_labels_list[labels[3].item()]],
+                                                    [train_labels_list[labels[4].item()]]])
+                        loss = criterion(outputs, expected)
                         # print(outputs)
                         # print(expected)
-                        labels_list_index+=1
 
                     _, preds = torch.max(outputs, 1)
 
@@ -99,7 +109,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                 # statistics
                 # print(f"my loss = {loss.item()}")
                 running_loss += loss.item() * inputs.size(0)
-                for output in torch.le(torch.abs(torch.sub(outputs, expected)), 0.05):
+                for output in torch.le(torch.abs(torch.sub(outputs, expected)), 0.03):
                     if output == True:
                         running_corrects+=1
 
@@ -142,6 +152,11 @@ def initialize_model(num_outputs, feature_extract, use_pretrained=True):
 
     return model_ft, input_size
 
+def img_loader(path: str):
+    with open(path, "rb") as f:
+        img = Image.open(f)
+        return img.convert("RGB")
+
 
 
 def main():
@@ -173,24 +188,21 @@ def main():
 
     # Create training and validation datasets
     image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
-    labels_list = []
-    print(len(image_datasets['train']))
-    print(len(image_datasets['val']))
-    for key in image_datasets:
-        for label_index in range(len(image_datasets[key].classes)):
-            image_datasets[key].classes[label_index] = (float(image_datasets[key].classes[label_index]) / 23000)
-    class_count = 0
-    for key in image_datasets:
-        for img in image_datasets[key].imgs:
-            class_count += 1
-            if class_count > 4:
-                labels_list.append(image_datasets[key].classes[img[1]])
-                class_count = 0
-    print(labels_list)
-    print(len(labels_list))
-    #     print(image_datasets[key].classes)
+    train_labels_list = []
+    val_labels_list = []
+    print(len(image_datasets['train'].classes))
+    print(len(image_datasets['val'].classes))
+    for label in image_datasets['train'].classes:
+        # image_datasets[key].classes[label_index] = (float(image_datasets[key].classes[label_index]) / 21000)
+        train_labels_list.append(float(label) / 23000)
+    for label in image_datasets['val'].classes:
+        # image_datasets[key].classes[label_index] = (float(image_datasets[key].classes[label_index]) / 21000)
+        val_labels_list.append(float(label) / 23000)
+
+    print(train_labels_list)
+    print(val_labels_list)
     # Create training and validation dataloaders
-    dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=4) for x in ['train', 'val']}
+    dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=False, num_workers=4) for x in ['train', 'val']}
     # for inputs, labels in dataloaders_dict['train']:
         # print(labels)
         # print(len(inputs))
@@ -220,13 +232,13 @@ def main():
                 print("\t",name)
                 
     # Observe that all parameters are being optimized
-    optimizer_ft = torch.optim.AdamW(params=model_ft.parameters(),lr=Learning_Rate) 
+    optimizer_ft = torch.optim.Adagrad(params=model_ft.parameters()) 
     
     # Setup the loss fxn
     criterion = nn.L1Loss()
 
     # Train and evaluate
-    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=False, labels_list=labels_list)
+    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=False, train_labels_list=train_labels_list, val_labels_list=val_labels_list)
     
     torch.save(model_ft.state_dict(), "/home/adam/Poly/SeniorProject/python/trained_model.pth")
     
