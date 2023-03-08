@@ -26,9 +26,9 @@ num_outputs = 1
 batch_size = 5
 
 # Number of epochs to train for
-num_epochs = 30
+num_epochs = 15
 
-Learning_Rate=1e-3
+Learning_Rate=0.0025
 
 
 # Flag for feature extracting. When False, we finetune the whole model,
@@ -90,11 +90,11 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                                                     [train_labels_list[labels[3].item()]],
                                                     [train_labels_list[labels[4].item()]]])
                         else:
-                            expected = torch.Tensor([[train_labels_list[labels[0].item()]],
-                                                    [train_labels_list[labels[1].item()]],
-                                                    [train_labels_list[labels[2].item()]],
-                                                    [train_labels_list[labels[3].item()]],
-                                                    [train_labels_list[labels[4].item()]]])
+                            expected = torch.Tensor([[val_labels_list[labels[0].item()]],
+                                                    [val_labels_list[labels[1].item()]],
+                                                    [val_labels_list[labels[2].item()]],
+                                                    [val_labels_list[labels[3].item()]],
+                                                    [val_labels_list[labels[4].item()]]])
                         loss = criterion(outputs, expected)
                         # print(outputs)
                         # print(expected)
@@ -148,7 +148,8 @@ def initialize_model(num_outputs, feature_extract, use_pretrained=True):
     set_parameter_requires_grad(model_ft, feature_extract)
     num_ftrs = 1280
     model_ft.classifier = nn.Linear(num_ftrs, num_outputs)
-    input_size = 224
+    input_size = 360
+    #360 by 240 try making bigger
 
     return model_ft, input_size
 
@@ -199,8 +200,8 @@ def main():
         # image_datasets[key].classes[label_index] = (float(image_datasets[key].classes[label_index]) / 21000)
         val_labels_list.append(float(label) / 23000)
 
-    print(train_labels_list)
-    print(val_labels_list)
+    # print(train_labels_list)
+    # print(val_labels_list)
     # Create training and validation dataloaders
     dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=False, num_workers=4) for x in ['train', 'val']}
     # for inputs, labels in dataloaders_dict['train']:
@@ -232,7 +233,7 @@ def main():
                 print("\t",name)
                 
     # Observe that all parameters are being optimized
-    optimizer_ft = torch.optim.Adagrad(params=model_ft.parameters()) 
+    optimizer_ft = torch.optim.Adagrad(params=model_ft.parameters(), lr=Learning_Rate) 
     
     # Setup the loss fxn
     criterion = nn.L1Loss()

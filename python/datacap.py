@@ -96,7 +96,7 @@ def main():
       
       if pic_num == 0:
         folder = str(lineCount)
-        path = "/home/adam/OneDrive/SeniorProjectData/normalized/val/" + folder
+        path = "/home/adam/OneDrive/SeniorProjectData/normalized/train/" + folder
         # path = "/home/adam/Poly/SeniorProject/generated_data/" + folder
         if os.path.exists(path) == False:
           os.mkdir(path)
