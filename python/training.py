@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import time
 import os
 from PIL import Image
+import pyautogui
 import copy
 
 print("PyTorch Version: ",torch.__version__)
@@ -26,9 +27,9 @@ num_outputs = 1
 batch_size = 5
 
 # Number of epochs to train for
-num_epochs = 15
+num_epochs = 3
 
-Learning_Rate=0.0025
+Learning_Rate = 0.12
 
 
 # Flag for feature extracting. When False, we finetune the whole model,
@@ -121,8 +122,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
             if phase == 'val':
+                best_model_wts = copy.deepcopy(model.state_dict())
                 val_acc_history.append(epoch_acc)
 
         print()
@@ -133,7 +134,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
     # load best model weights
     model.load_state_dict(best_model_wts)
-    return model, val_acc_history
+    return model, optimizer
 
 def set_parameter_requires_grad(model, feature_extracting):
     if feature_extracting:
@@ -144,11 +145,11 @@ def initialize_model(num_outputs, feature_extract, use_pretrained=True):
     # Initialize these variables which will be set in this if statement. Each of these
     #   variables is model specific.
 
-    model_ft = models.mobilenet_v2(pretrained=use_pretrained)
+    model_ft = models.mobilenet_v3_small(pretrained=use_pretrained)
     set_parameter_requires_grad(model_ft, feature_extract)
-    num_ftrs = 1280
+    num_ftrs = 576
     model_ft.classifier = nn.Linear(num_ftrs, num_outputs)
-    input_size = 360
+    input_size = 350
     #360 by 240 try making bigger
 
     return model_ft, input_size
@@ -203,7 +204,9 @@ def main():
     # print(train_labels_list)
     # print(val_labels_list)
     # Create training and validation dataloaders
-    dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=False, num_workers=4) for x in ['train', 'val']}
+    dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, shuffle=False, num_workers=5) for x in ['train', 'val']}
+    # print(len(dataloaders_dict['train'].dataset))
+    # print(len(dataloaders_dict['val'].dataset))
     # for inputs, labels in dataloaders_dict['train']:
         # print(labels)
         # print(len(inputs))
@@ -236,12 +239,22 @@ def main():
     optimizer_ft = torch.optim.Adagrad(params=model_ft.parameters(), lr=Learning_Rate) 
     
     # Setup the loss fxn
-    criterion = nn.L1Loss()
+    criterion = nn.MSELoss()
+    
+    # print(model_ft)
+    
+    checkpoint = torch.load('/home/adam/Poly/SeniorProject/python/trained_model_mobilenet_v3_big.pth')
+    model_ft.load_state_dict(checkpoint['model_state_dict'])
+    optimizer_ft.load_state_dict(checkpoint['optimizer_state_dict'])
 
     # Train and evaluate
-    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=False, train_labels_list=train_labels_list, val_labels_list=val_labels_list)
+    model_ft, optimizer_ft = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=False, train_labels_list=train_labels_list, val_labels_list=val_labels_list)
+    # # print(model_ft)
     
-    torch.save(model_ft.state_dict(), "/home/adam/Poly/SeniorProject/python/trained_model.pth")
+    torch.save({
+                'model_state_dict': model_ft.state_dict(),
+                'optimizer_state_dict': optimizer_ft.state_dict(),
+                }, "/home/adam/Poly/SeniorProject/python/trained_model_mobilenet_v3_big_again")
     
     # print(model_ft(data_transforms['val'][0]) * 2100)
     # print(model_ft)
